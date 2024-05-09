@@ -10,7 +10,7 @@ def get_cat_image_url():
     params = {
         "query": "cat",
         "orientation": "landscape",
-        "client_id": "YOUR_UNSPLASH_ACCESS_KEY"  # Замініть це значення на ваш ключ доступу Unsplash
+        "client_id": "DPNw3BygNSPH-b7quoPt07QcVt6a9wa9PRgZvcdetJs"  # Замініть це значення на ваш ключ доступу Unsplash
     }
     response = requests.get(url, params=params)
     data = response.json()
