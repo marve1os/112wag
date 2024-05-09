@@ -2,7 +2,7 @@
 FROM python:3.9
 
 # Встановіть Flask в образі
-RUN pip install Flask
+RUN pip install Flask requests
 
 # Встановіть робочу директорію у контейнері
 WORKDIR /app
@@ -11,4 +11,5 @@ WORKDIR /app
 COPY . /app
 
 # Визначте команду для запуску сервера Flask у контейнері
-CMD ["flask", "run", "--host=0.0.0.0","python","app.py"]
+CMD ["python","app.py"]
+
