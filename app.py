@@ -1,26 +1,37 @@
-from flask import Flask, render_template
-import requests
-import random
+from flask import Flask, render_template, request, redirect, url_for
+import os
 
 app = Flask(__name__)
 
-# Функція для отримання URL випадкового зображення котика з Unsplash
-def get_cat_image_url():
-    url = "https://api.unsplash.com/photos/random"
-    params = {
-        "query": "cat",
-        "orientation": "landscape",
-        "client_id": "DPNw3BygNSPH-b7quoPt07QcVt6a9wa9PRgZvcdetJs"  # Замініть це значення на ваш ключ доступу Unsplash
-    }
-    response = requests.get(url, params=params)
-    data = response.json()
-    cat_image_url = data["urls"]["regular"]
-    return cat_image_url
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
 def index():
-    cat_image_url = get_cat_image_url()
-    return render_template('index.html', cat_image_url=cat_image_url)
+    return render_template('index.html')
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if request.method == 'POST':
+        if 'file' not in request.files:
+            return redirect(request.url)
+        file = request.files['file']
+        if file.filename == '':
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = file.filename
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return redirect(url_for('uploaded_file', filename=filename))
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return render_template('uploaded.html', filename=filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)

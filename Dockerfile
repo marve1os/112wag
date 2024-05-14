@@ -1,15 +1,12 @@
-# Використовуйте базовий образ Python
 FROM python:3.9
 
-# Встановіть Flask в образі
-RUN pip install Flask requests
-
-# Встановіть робочу директорію у контейнері
 WORKDIR /app
 
-# Скопіюйте всі файли додатка в образ
+COPY requirements.txt /app
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . /app
 
-# Визначте команду для запуску сервера Flask у контейнері
-CMD ["python","app.py"]
+EXPOSE 5000
 
+CMD ["python", "app.py"]
