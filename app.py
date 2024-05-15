@@ -1,37 +1,45 @@
-from flask import Flask, render_template, request, redirect, url_for
-import os
+from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://username:password@localhost:3306/data'
+db = SQLAlchemy(app)
+# Модель для таблиці завдань
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    task = db.Column(db.String(200), nullable=False)
 
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    def __repr__(self):
+        return f'<Task {self.id}>'
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# Маршрути для REST API
+@app.route('/tasks', methods=['GET'])
+def get_tasks():
+    tasks = Task.query.all()
+    tasks_json = [{'id': task.id, 'task': task.task} for task in tasks]
+    return jsonify(tasks_json)
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@app.route('/tasks', methods=['POST'])
+def create_task():
+    task_text = request.json['task']
+    new_task = Task(task=task_text)
+    db.session.add(new_task)
+    db.session.commit()
+    return jsonify({'message': 'Task created successfully'}), 201
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+@app.route('/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    task.task = request.json['task']
+    db.session.commit()
+    return jsonify({'message': 'Task updated successfully'})
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            return redirect(request.url)
-        file = request.files['file']
-        if file.filename == '':
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = file.filename
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('uploaded_file', filename=filename))
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return render_template('uploaded.html', filename=filename)
+@app.route('/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({'message': 'Task deleted successfully'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
