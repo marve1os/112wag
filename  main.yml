@@ -16,8 +16,37 @@
     - name: Print DB password
       debug:
         msg: "DB password is {{ db_password }}"
+- name: Update and install Apache2 and configure UFW
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Update apt package index
+      apt:
+        update_cache: yes
 
+    - name: Install Apache2
+      apt:
+        name: apache2
+        state: present
 
+    - name: List UFW application profiles
+      shell: sudo ufw app list
+      register: ufw_app_list
+      changed_when: false
+      ignore_errors: true
 
+    - debug:
+        var: ufw_app_list.stdout_lines
+
+    - name: Allow Apache through UFW
+      shell: sudo ufw allow 'Apache'
+      when: "'Apache' not in ufw_app_list.stdout"
+
+    - name: Check UFW status
+      shell: sudo ufw status
+      register: ufw_status
+
+    - debug:
+        var: ufw_status.stdout
 
 
